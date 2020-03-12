@@ -1,4 +1,4 @@
-package config
+package tags
 
 import (
 	"fmt"
@@ -27,8 +27,12 @@ func init() {
 	tagHandlers[Max] = getMaxValue
 }
 
+func Register(tagName string, h TagHandler) {
+	tagHandlers[tagName] = h
+}
+
 func getMinValue(rawValue reflect.Value, tagValue string) (reflect.Value, error) {
-	minValue, err := getValue(tagValue, rawValue)
+	minValue, err := getValue(rawValue, tagValue)
 	if err != nil {
 		return rawValue, err
 	}
@@ -40,7 +44,7 @@ func getMinValue(rawValue reflect.Value, tagValue string) (reflect.Value, error)
 }
 
 func getMaxValue(rawValue reflect.Value, tagValue string) (reflect.Value, error) {
-	maxValue, err := getValue(tagValue, rawValue)
+	maxValue, err := getValue(rawValue, tagValue)
 	if err != nil {
 		return rawValue, err
 	}
@@ -55,7 +59,7 @@ func getDefaultValue(rawValue reflect.Value, tagValue string) (reflect.Value, er
 		return rawValue, nil
 	}
 
-	defaultValue, err := getValue(tagValue, rawValue)
+	defaultValue, err := getValue(rawValue, tagValue)
 	if err != nil {
 		return rawValue, err
 	}
@@ -112,44 +116,44 @@ func valueCompare(v1 reflect.Value, v2 reflect.Value) int {
 	return 0
 }
 
-func getValue(tagValue string, rawValue reflect.Value) (ret reflect.Value, err error) {
+func getValue(rawValue reflect.Value, tagValue string) (ret reflect.Value, err error) {
 	ret = unsafeValueOf(rawValue) //reflect.Zero(rawValue.Type())
 	switch rawValue.Type().String() {
 	case "string":
 		ret.SetString(tagValue)
 		return
 	case "int", "int16", "int32", "int64":
-		i, ierr := strconv.ParseInt(tagValue, 10, 64)
-		if ierr != nil {
-			err = ierr
+		var i int64
+		i, err = strconv.ParseInt(tagValue, 10, 64)
+		if err != nil {
 			return
 		}
 		ret.SetInt(i)
 	case "uint", "uint16", "uint32", "uint64":
-		i, ierr := strconv.ParseUint(tagValue, 10, 64)
-		if ierr != nil {
-			err = ierr
+		var i uint64
+		i, err = strconv.ParseUint(tagValue, 10, 64)
+		if err != nil {
 			return
 		}
 		ret.SetUint(i)
 	case "float32", "float64":
-		i, ierr := strconv.ParseFloat(tagValue, 10)
-		if ierr != nil {
-			err = ierr
+		var f float64
+		f, err = strconv.ParseFloat(tagValue, 10)
+		if err != nil {
 			return
 		}
-		ret.SetFloat(i)
+		ret.SetFloat(f)
 	case "bool":
-		b, ierr := strconv.ParseBool(tagValue)
-		if ierr != nil {
-			err = ierr
+		var b bool
+		b, err = strconv.ParseBool(tagValue)
+		if err != nil {
 			return
 		}
 		ret.SetBool(b)
 	case "time.Duration":
-		d, ierr := time.ParseDuration(tagValue)
-		if ierr != nil {
-			err = ierr
+		var d time.Duration
+		d, err = time.ParseDuration(tagValue)
+		if err != nil {
 			return
 		}
 		ret.Set(reflect.ValueOf(d))

@@ -1,13 +1,23 @@
-package config
+package tags
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
 
+var (
+	ErrNotPtr = errors.New("not ptr")
+)
+
+// process tags
 func Revise(st interface{}) error {
-	value := reflect.ValueOf(st).Elem()
-	return revise(value)
+	value := reflect.ValueOf(st)
+	if value.Kind() != reflect.Ptr {
+		return ErrNotPtr
+	}
+
+	return revise(value.Elem())
 }
 
 func revise(value reflect.Value) error {
@@ -29,16 +39,19 @@ func revise(value reflect.Value) error {
 			continue
 		}
 
-		for k, v := range tagHandlers {
-			tagValue := field.Tag.Get(k)
-			if tagValue != "" {
-				destValue, err := v(fieldValue, tagValue)
-				if err != nil {
-					return fmt.Errorf("revise field:%s tag:%s err:%w", field.Name, k, err)
-				}
-				if !reflect.DeepEqual(fieldValue, destValue) {
-					fieldValue.Set(destValue)
-				}
+		for _, v := range parseTags(string(field.Tag)) {
+			h, ok := tagHandlers[v.name]
+			if !ok {
+				continue
+			}
+
+			destValue, err := h(fieldValue, v.value)
+			if err != nil {
+				return fmt.Errorf("revise field:%s tag:%s err:%w", field.Name, v.name, err)
+			}
+
+			if !reflect.DeepEqual(fieldValue, destValue) {
+				fieldValue.Set(destValue)
 			}
 		}
 	}

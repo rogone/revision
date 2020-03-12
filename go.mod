@@ -1,3 +1,3 @@
-module github.com/rogone/revision
+module github.com/rogone/tags
 
 go 1.13

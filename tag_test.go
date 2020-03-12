@@ -1,7 +1,9 @@
-package config
+package tags
 
 import (
 	"fmt"
+	"os"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -26,10 +28,10 @@ func TestMin(t *testing.T) {
 	v := &T{}
 	err := Revise(v)
 	if err != nil {
-		t.Errorf("%s", err.Error())
+		t.Errorf("TestMin %s", err.Error())
 	}
 
-	fmt.Printf("%#v\n", v)
+	fmt.Printf("TestMin %#v\n", v)
 }
 
 func TestMax(t *testing.T) {
@@ -65,10 +67,10 @@ func TestMax(t *testing.T) {
 	}
 	err := Revise(v)
 	if err != nil {
-		t.Errorf("%s", err.Error())
+		t.Errorf("TestMax %s", err.Error())
 	}
 
-	fmt.Printf("%#v\n", v)
+	fmt.Printf("TestMax %#v\n", v)
 }
 
 func TestDefault(t *testing.T) {
@@ -90,35 +92,45 @@ func TestDefault(t *testing.T) {
 	v := &T{}
 	err := Revise(v)
 	if err != nil {
-		t.Errorf("%s", err.Error())
+		t.Errorf("TestDefault %s", err.Error())
 	}
 
-	fmt.Printf("%#v\n", v)
+	fmt.Printf("TestDefault %#v\n", v)
 }
 
-func Test(t *testing.T) {
+func TestEnv(t *testing.T) {
 	type T struct {
 		N struct {
-			S    string        `default:"1"`
-			I    int           `default:"1"`
-			I16  int16         `default:"1"`
-			I32  int32         `default:"1"`
-			I64  int64         `default:"1"`
-			Ui   uint          `default:"1"`
-			Ui16 uint16        `default:"1"`
-			Ui32 uint32        `default:"1"`
-			Ui64 uint64        `default:"1"`
-			F32  float32       `default:"1"`
-			F64  float64       `default:"1"`
-			B    bool          `default:"true"`
-			T    time.Duration `default:"1s"`
+			S    string        `env:"ENV_S"`
+			I    int           `env:"ENV_I"`
+			I16  int16         `env:"ENV_I16"`
+			I32  int32         `env:"ENV_I32"`
+			I64  int64         `env:"ENV_I32"`
+			Ui   uint          `env:"ENV_U"`
+			Ui16 uint16        `env:"ENV_U16"`
+			Ui32 uint32        `env:"ENV_U32"`
+			Ui64 uint64        `env:"ENV_U64"`
+			F32  float32       `env:"ENV_F32"`
+			F64  float64       `env:"ENV_F64"`
+			B    bool          `env:"ENV_B"`
+			T    time.Duration `env:"ENV_T"`
 		}
 	}
+
 	v := &T{}
+
+	typ := reflect.TypeOf(v.N)
+	for i := 0; i < typ.NumField(); i++ {
+		k := typ.Field(i).Tag.Get(ENV)
+		os.Setenv(k, "1")
+	}
+	os.Setenv("ENV_B", "true")
+	os.Setenv("ENV_T", "1s")
+
 	err := Revise(v)
 	if err != nil {
-		t.Errorf("%s", err.Error())
+		t.Errorf("TestEnv %s", err.Error())
 	}
 
-	fmt.Printf("%#v\n", v)
+	fmt.Printf("TestEnv %#v\n", v)
 }
