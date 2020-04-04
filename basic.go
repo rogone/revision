@@ -118,47 +118,65 @@ func valueCompare(v1 reflect.Value, v2 reflect.Value) int {
 
 func getValue(rawValue reflect.Value, tagValue string) (ret reflect.Value, err error) {
 	ret = unsafeValueOf(rawValue) //reflect.Zero(rawValue.Type())
-	switch rawValue.Type().String() {
-	case "string":
-		ret.SetString(tagValue)
+	setValue := func(typeName string) (mismatch bool, err error) {
+		//switch rawValue.Kind().String() {
+		switch typeName {
+		case "string":
+			ret.SetString(tagValue)
+			return
+		case "int", "int16", "int32", "int64":
+			var i int64
+			i, err = strconv.ParseInt(tagValue, 10, 64)
+			if err != nil {
+				return
+			}
+			ret.SetInt(i)
+		case "uint", "uint16", "uint32", "uint64":
+			var i uint64
+			i, err = strconv.ParseUint(tagValue, 10, 64)
+			if err != nil {
+				return
+			}
+			ret.SetUint(i)
+		case "float32", "float64":
+			var f float64
+			f, err = strconv.ParseFloat(tagValue, 10)
+			if err != nil {
+				return
+			}
+			ret.SetFloat(f)
+		case "bool":
+			var b bool
+			b, err = strconv.ParseBool(tagValue)
+			if err != nil {
+				return
+			}
+			ret.SetBool(b)
+		case "time.Duration":
+			var d time.Duration
+			d, err = time.ParseDuration(tagValue)
+			if err != nil {
+				return
+			}
+			ret.Set(reflect.ValueOf(d))
+		default:
+			mismatch = true
+		}
 		return
-	case "int", "int16", "int32", "int64":
-		var i int64
-		i, err = strconv.ParseInt(tagValue, 10, 64)
-		if err != nil {
-			return
-		}
-		ret.SetInt(i)
-	case "uint", "uint16", "uint32", "uint64":
-		var i uint64
-		i, err = strconv.ParseUint(tagValue, 10, 64)
-		if err != nil {
-			return
-		}
-		ret.SetUint(i)
-	case "float32", "float64":
-		var f float64
-		f, err = strconv.ParseFloat(tagValue, 10)
-		if err != nil {
-			return
-		}
-		ret.SetFloat(f)
-	case "bool":
-		var b bool
-		b, err = strconv.ParseBool(tagValue)
-		if err != nil {
-			return
-		}
-		ret.SetBool(b)
-	case "time.Duration":
-		var d time.Duration
-		d, err = time.ParseDuration(tagValue)
-		if err != nil {
-			return
-		}
-		ret.Set(reflect.ValueOf(d))
-	default:
-		fmt.Printf("unsupported type:%T\n", rawValue)
+	}
+
+	var mismatch bool
+	mismatch, err = setValue(rawValue.Type().String()) // try type name
+	if err != nil {
+		return
+	} else if mismatch {
+		mismatch, err = setValue(rawValue.Kind().String()) // try type defined
+	}
+
+	if err != nil {
+		return
+	} else if mismatch {
+		fmt.Printf("unsupported type:%s\n", rawValue.Kind().String())
 		return rawValue, nil
 	}
 	return
