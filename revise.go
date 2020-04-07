@@ -3,6 +3,7 @@ package tags
 import (
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 )
 
@@ -45,15 +46,12 @@ func revise(value reflect.Value) error {
 				continue
 			}
 
-			destValue, err := h(fieldValue, v.value)
+			err := h(fieldValue, v.value)
 			if err != nil {
 				return fmt.Errorf("revise field:%s tag:%s err:%w", field.Name, v.name, err)
 			}
-
-			if !reflect.DeepEqual(fieldValue, destValue) {
-				fieldValue.Set(destValue)
-			}
 		}
 	}
+	fs.Parse(os.Args[1:])
 	return nil
 }

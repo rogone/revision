@@ -19,51 +19,55 @@ var (
 	tagHandlers = map[string]TagHandler{}
 )
 
-type TagHandler func(rawValue reflect.Value, tagValue string) (reflect.Value, error)
+type TagHandler func(rawValue reflect.Value, tagValue string) error
 
 func init() {
-	tagHandlers[Default] = getDefaultValue
-	tagHandlers[Min] = getMinValue
-	tagHandlers[Max] = getMaxValue
+	tagHandlers[Default] = defaultTagHandler
+	tagHandlers[Min] = minTagHandler
+	tagHandlers[Max] = maxTagHandler
 }
 
 func Register(tagName string, h TagHandler) {
 	tagHandlers[tagName] = h
 }
 
-func getMinValue(rawValue reflect.Value, tagValue string) (reflect.Value, error) {
+func minTagHandler(rawValue reflect.Value, tagValue string) error {
 	minValue, err := getValue(rawValue, tagValue)
 	if err != nil {
-		return rawValue, err
+		return err
 	}
 
 	if valueCompare(rawValue, minValue) == -1 {
-		return minValue, nil
+		rawValue.Set(minValue)
 	}
-	return rawValue, nil
+	return nil
 }
 
-func getMaxValue(rawValue reflect.Value, tagValue string) (reflect.Value, error) {
+func maxTagHandler(rawValue reflect.Value, tagValue string) error {
 	maxValue, err := getValue(rawValue, tagValue)
 	if err != nil {
-		return rawValue, err
+		return err
 	}
 	if valueCompare(rawValue, maxValue) == 1 {
-		return maxValue, nil
+		rawValue.Set(maxValue)
 	}
-	return rawValue, nil
+	return nil
 }
 
-func getDefaultValue(rawValue reflect.Value, tagValue string) (reflect.Value, error) {
+func defaultTagHandler(rawValue reflect.Value, tagValue string) error {
 	if !rawValue.IsZero() {
-		return rawValue, nil
+		return nil
 	}
 
 	defaultValue, err := getValue(rawValue, tagValue)
 	if err != nil {
-		return rawValue, err
+		return err
 	}
-	return defaultValue, nil
+
+	if !reflect.DeepEqual(rawValue, defaultValue) {
+		rawValue.Set(defaultValue)
+	}
+	return nil
 }
 
 func valueCompare(v1 reflect.Value, v2 reflect.Value) int {

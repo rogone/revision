@@ -13,10 +13,19 @@ func init() {
 	tagHandlers[ENV] = getEnv
 }
 
-func getEnv(rawValue reflect.Value, tagValue string) (reflect.Value, error) {
+func getEnv(rawValue reflect.Value, tagValue string) error {
 	envValue := os.Getenv(tagValue)
 	if envValue == "" {
-		return rawValue, nil
+		return nil
 	}
-	return getValue(rawValue, envValue)
+
+	v, err := getValue(rawValue, envValue)
+	if err != nil {
+		return err
+	}
+
+	if !reflect.DeepEqual(rawValue, v) {
+		rawValue.Set(v)
+	}
+	return nil
 }

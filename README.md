@@ -5,12 +5,14 @@
 * max：最大值，变量值大于此值时生效
 * default：默认值，变量为零值时生效
 * env：使用环境变量值
+* flag: 使用`flag` 库解析命令行参数，支持默认值，不设置时使用零值
 
 ## 2.使用方法
 定义结构体时添加tag
 ```golang
 type T struct{
     I int `env:"T_I" min:"1" max:"0" default:"2"`
+    F float64 `flag:"F,1"` // 等于 flag.FloatVar(&t.F,"F",1,"F")
 }
 
 t := &T{}
@@ -24,3 +26,7 @@ t := &T{}
 4. 因为是零值，所以`default`处理后为2。
 
 实际操作中应该避免多个tag处理时相互干扰。
+
+## 3. 类型支持
+
+### flag: flag标准库支持的8种类型`bool`, `int`, `uint`, `int64`, `uint64`, `float64`, `string`, `time.Duration`
