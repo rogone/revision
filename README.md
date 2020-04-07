@@ -29,4 +29,4 @@ t := &T{}
 
 ## 3. 类型支持
 
-### flag: flag标准库支持的8种类型`bool`, `int`, `uint`, `int64`, `uint64`, `float64`, `string`, `time.Duration`
+* flag: flag标准库支持的8种类型`bool`, `int`, `uint`, `int64`, `uint64`, `float64`, `string`, `time.Duration`
